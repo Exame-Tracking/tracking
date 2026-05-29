@@ -1,6 +1,9 @@
 (function () {
   window.dataLayer = window.dataLayer || [];
 
+  // ===============================
+  // CONFIGURAÇÕES
+  // ===============================
   var STORAGE_KEY = "exame_tracking_data";
 
   var ANONYMOUS_ID_KEY = "exame_anonymous_id";
@@ -16,6 +19,9 @@
   var COOKIE_DAYS = 365;
   var SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 
+  // ===============================
+  // FUNÇÕES BASE
+  // ===============================
   function dlPush(obj) {
     window.dataLayer.push(obj);
     console.log("dataLayer push:", obj);
@@ -47,7 +53,7 @@
 
   function getCookie(name) {
     try {
-      var escapedName = name.replace(/[.*+?^${}()|[]\]/g, "\$&");
+      var escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       var match = document.cookie.match(new RegExp("(?:^|; )" + escapedName + "=([^;]*)"));
       return match ? decodeURIComponent(match[1]) : null;
     } catch (e) {
@@ -58,7 +64,7 @@
   function getRootDomain() {
     var hostname = window.location.hostname || "";
 
-    if (hostname === "localhost" || /^d+.d+.d+.d+$/.test(hostname)) {
+    if (hostname === "localhost" || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
       return "";
     }
 
@@ -118,6 +124,10 @@
     return data;
   }
 
+  // ===============================
+  // IDS PADRONIZADOS
+  // Ordem: URL > cookie/localStorage > novo UUID
+  // ===============================
   function ensureTrackingIds() {
     var now = Date.now();
     var data = getLocalStorageData();
@@ -173,6 +183,9 @@
     return window.exameTrackingIds;
   }
 
+  // ===============================
+  // ATRIBUIÇÃO
+  // ===============================
   function getCurrentUtm() {
     return {
       source: getParam("utm_source"),
@@ -243,6 +256,9 @@
     return data;
   }
 
+  // ===============================
+  // FORMULÁRIO
+  // ===============================
   function getFormMap(form) {
     var map = {};
 
@@ -266,12 +282,26 @@
     return "";
   }
 
+  function pickFromSelector(root, selectors) {
+    for (var i = 0; i < selectors.length; i++) {
+      var el = root.querySelector(selectors[i]);
+      if (el && "value" in el && el.value) {
+        return String(el.value || "").trim();
+      }
+    }
+    return "";
+  }
+
+  function getLeadField(form, formMap, mapCandidates, selectorCandidates) {
+    return pickFromMap(formMap, mapCandidates) || pickFromSelector(form, selectorCandidates);
+  }
+
   function normalizeEmail(value) {
     return value ? String(value).trim().toLowerCase() : "";
   }
 
   function normalizePhone(value) {
-    var clean = String(value || "").replace(/D/g, "");
+    var clean = String(value || "").replace(/\D/g, "");
     if (!clean) return "";
     return clean.indexOf("55") === 0 ? clean : "55" + clean;
   }
@@ -279,8 +309,9 @@
   function isValidLead(form, formMap) {
     if (typeof form.checkValidity === "function" && !form.checkValidity()) return false;
 
-    var email = pickFromMap(formMap, ["email", "e-mail", "mail"]);
-    var phone = pickFromMap(formMap, ["mobile", "telefone", "phone", "celular"]);
+    var email = getLeadField(form, formMap, ["email", "e-mail", "mail"], ["#email", 'input[name="email"]', 'input[type="email"]']);
+
+    var phone = getLeadField(form, formMap, ["mobile", "telefone", "phone", "celular"], ["#mobile", "#telefone", "#phone", 'input[name="mobile"]', 'input[name="telefone"]', 'input[type="tel"]']);
 
     return !!(email || phone);
   }
@@ -304,6 +335,9 @@
     return false;
   }
 
+  // ===============================
+  // CONTEXTO
+  // ===============================
   function getDeviceType() {
     if (/Mobi|Android/i.test(navigator.userAgent)) return "mobile";
     if (/iPad|Tablet/i.test(navigator.userAgent)) return "tablet";
@@ -337,6 +371,9 @@
     saveLocalStorageData(data);
   }
 
+  // ===============================
+  // LEAD SUBMIT
+  // ===============================
   function handleLeadSubmit(ev) {
     if (!ev || !ev.target || !ev.target.matches("form")) return;
 
@@ -356,16 +393,23 @@
     var firstClickIds = trackingData.first_click_ids || {};
     var lastClickIds = trackingData.last_click_ids || {};
 
-    var name = pickFromMap(formMap, ["last_name", "first_name", "nome", "name", "nome_completo", "fullname"]);
+    var name = getLeadField(form, formMap, ["last_name", "first_name", "nome", "name", "nome_completo", "fullname"], ["#last_name", "#first_name", "#nome", "#name", 'input[name="first_name"]', 'input[name="last_name"]', 'input[name="nome"]']);
 
-    var email = normalizeEmail(pickFromMap(formMap, ["email", "e-mail", "mail"]));
+    var firstName = getLeadField(form, formMap, ["first_name", "nome", "name"], ["#last_name", "#first_name", "#nome", 'input[name="first_name"]', 'input[name="nome"]']);
 
-    var phone = normalizePhone(pickFromMap(formMap, ["mobile", "telefone", "phone", "celular"]));
+    var lastName = getLeadField(form, formMap, ["last_name", "sobrenome"], ["#sobrenome", 'input[name="last_name"]', 'input[name="sobrenome"]']);
 
-    var empresa = pickFromMap(formMap, ["empresa", "company"]);
-    var cargo = pickFromMap(formMap, ["cargo", "job_title", "jobtitle"]);
-    var experiencia = pickFromMap(formMap, ["experiencia", "experience"]);
-    var linkedin = pickFromMap(formMap, ["linkedin", "linkedin_url"]);
+    var email = normalizeEmail(getLeadField(form, formMap, ["email", "e-mail", "mail"], ["#email", 'input[name="email"]', 'input[type="email"]']));
+
+    var phone = normalizePhone(getLeadField(form, formMap, ["mobile", "telefone", "phone", "celular"], ["#mobile", "#telefone", "#phone", 'input[name="mobile"]', 'input[name="telefone"]', 'input[type="tel"]']));
+
+    var empresa = getLeadField(form, formMap, ["empresa", "company"], ["#empresa", "#company", 'input[name="empresa"]', 'input[name="company"]']);
+
+    var cargo = getLeadField(form, formMap, ["cargo", "job_title", "jobtitle"], ["#cargo", "#job_title", "#jobtitle", 'input[name="cargo"]', 'input[name="job_title"]']);
+
+    var experiencia = getLeadField(form, formMap, ["experiencia", "experience"], ["#experiencia", "#experience", 'input[name="experiencia"]', 'input[name="experience"]']);
+
+    var linkedin = getLeadField(form, formMap, ["linkedin", "linkedin_url"], ["#linkedin", "#linkedin_url", 'input[name="linkedin"]', 'input[name="linkedin_url"]']);
 
     saveIdentityForNextPageviews({
       name: name,
@@ -374,7 +418,7 @@
     });
 
     var payload = {
-      event: "lead",
+      event: "lead_submit",
       event_name: "Lead",
       event_id: generateUUID(),
       event_timestamp: new Date().toISOString(),
@@ -393,6 +437,12 @@
       product_name: getProductName(),
       referrer: document.referrer || null,
 
+      utm_source: getParam("utm_source") || null,
+      utm_medium: getParam("utm_medium") || null,
+      utm_campaign: getParam("utm_campaign") || null,
+      utm_content: getParam("utm_content") || null,
+      utm_term: getParam("utm_term") || null,
+
       first_utm_source: firstUtm.source || null,
       first_utm_medium: firstUtm.medium || null,
       first_utm_campaign: firstUtm.campaign || null,
@@ -405,6 +455,16 @@
       last_utm_campaign: lastUtm.campaign || null,
       last_utm_content: lastUtm.content || null,
       last_utm_term: lastUtm.term || null,
+
+      fbclid: getParam("fbclid") || null,
+      gclid: getParam("gclid") || null,
+      ttclid: getParam("ttclid") || null,
+      li_click_id: getParam("li_click_id") || null,
+      msclkid: getParam("msclkid") || null,
+      twclid: getParam("twclid") || null,
+      dclid: getParam("dclid") || null,
+      wbraid: getParam("wbraid") || null,
+      gbraid: getParam("gbraid") || null,
 
       first_fbclid: firstClickIds.fbclid || null,
       first_gclid: firstClickIds.gclid || null,
@@ -426,9 +486,13 @@
       last_wbraid: lastClickIds.wbraid || null,
       last_gbraid: lastClickIds.gbraid || null,
 
-      _fbp: getCookie("_fbp"),
-      _fbc: getCookie("_fbc"),
-      _ga: getCookie("_ga"),
+      _fbp: getCookie("_fbp") || null,
+      _fbc: getCookie("_fbc") || null,
+      _ga: getCookie("_ga") || null,
+
+      fbp: getCookie("_fbp") || null,
+      fbc: getCookie("_fbc") || null,
+      ga_cookie: getCookie("_ga") || null,
 
       device_type: getDeviceType(),
       browser: navigator.userAgent,
@@ -436,7 +500,10 @@
       browser_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
 
       name: name || null,
+      first_name: firstName || null,
+      last_name: lastName || null,
       email: email || null,
+      telefone: phone || null,
       phone: phone || null,
 
       empresa: empresa || null,
