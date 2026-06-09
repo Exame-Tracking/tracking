@@ -461,6 +461,33 @@
         });
   }
 
+  function startUmami() {
+    const websiteIds = {
+      'lps.exame.com': '11d5f6f9-2d0e-4ecb-a90d-ab6408c2b313',
+      'lps.saintpaul.com.br': 'ea330008-5957-494d-8591-7265c3887af4',
+    };
+
+    const websiteId = websiteIds[location.hostname];
+    if (!websiteId) return;
+    if (document.querySelector('script[src*="umami.striker.marketing"]')) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://umami.striker.marketing/script.js';
+    script.setAttribute('data-website-id', websiteId);
+
+    script.onload = () => {
+      document.head.appendChild(Object.assign(document.createElement("script"), {
+        src: "https://cdn.jsdelivr.net/gh/Striker-Marketing/HandleUmamiTracking@1/script.min.js?cb=" + Math.floor(Date.now() / 600000),
+      }));
+    };
+
+    script.onerror = () => {
+      console.error('Failed to load Umami script');
+    };
+
+    document.head.appendChild(script);
+  }
+
   function init() {
         var payload = buildBasePayload('pageview', 'pageview');
         dlPush(payload);
@@ -470,7 +497,9 @@
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', startUmami);
   } else {
         init();
+        startUmami();
   }
 })();

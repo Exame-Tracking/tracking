@@ -554,6 +554,11 @@
 
 
     dlPush(payload);
+
+    if (window.umami) {
+      window.umami.track('Lead');
+    }
+
   }
 
 
