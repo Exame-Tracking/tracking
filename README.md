@@ -3,25 +3,13 @@
 Adicione os scripts dentro do `<head>` da página.
 
 ```html
-
-<script>
-(function(w, d, s, l, i) {
-  w[l] = w[l] || [];
-  w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-  var f = d.getElementsByTagName(s)[0],
-      j = d.createElement(s),
-      dl = l !== 'dataLayer' ? '&l=' + l : '';
-  j.async = true;
-  j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
-  f.parentNode.insertBefore(j, f);
-})(window, document, 'script', 'dataLayer', 'GTM-K56CC72V');
-</script>
+<script src="https://exame-tracking-224ea0.gitlab.io/loader.js?scripts=gtm,pageview,lead"></script>
 <script>
   document.head.appendChild(Object.assign(document.createElement("script"), {
-    src: `https://cdn.jsdelivr.net/gh/Exame-Tracking/tracking@1/pageview.min.js?cb=${Math.floor(Date.now() / 600000)}`,
+    src: `https://cdn.jsdelivr.net/gh/Exame-Tracking/tracking@2/pageview.min.js?cb=${Math.floor(Date.now() / 600000)}`,
   }));
   document.head.appendChild(Object.assign(document.createElement("script"), {
-    src: `https://cdn.jsdelivr.net/gh/Exame-Tracking/tracking@1/lead.min.js?cb=${Math.floor(Date.now() / 600000)}`,
+    src: `https://cdn.jsdelivr.net/gh/Exame-Tracking/tracking@2/lead.min.js?cb=${Math.floor(Date.now() / 600000)}`,
   }));
 </script>
 ```
@@ -31,7 +19,7 @@ Apenas nas páginas **vdl**, adicione também:
 ```html
 <script>
   document.head.appendChild(Object.assign(document.createElement("script"), {
-    src: `https://cdn.jsdelivr.net/gh/Exame-Tracking/tracking@1/qualified-lead.min.js?cb=${Math.floor(Date.now() / 600000)}`,
+    src: `https://cdn.jsdelivr.net/gh/Exame-Tracking/tracking@2/qualified-lead.min.js?cb=${Math.floor(Date.now() / 600000)}`,
   }));
 </script>
 ```
@@ -40,11 +28,11 @@ Apenas nas páginas **vdl**, adicione também:
 
 ### `pageview.min.js`
 
-Responsável pelo tracking automático de visualizações de página.
+Responsável pelo tracking automático de visualizações de página para o Umami.
 
 ### `lead.min.js`
 
-Responsável pelo tracking de leads e envios de formulário.
+Responsável pelo tracking de leads e envios de formulário para o Umami.
 
 ### `qualified-lead.min.js`
 
